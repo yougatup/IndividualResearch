@@ -6,6 +6,7 @@
 #include <algorithm>
 using namespace std;
 const int VertexMAX = 100;
+const int EdgeMAX = 100;
 const int GraphMAX = 100;
 const int kMAX = 100;
 const int K = 2;
@@ -33,7 +34,6 @@ class Sequence{
 		void setRoot(const VertexLabel s){
 			root = s;
 		}
-
 };
 bool operator < (const Sequence& s, const Sequence& t){
 	if(s.root < t.root) return true;
@@ -84,7 +84,7 @@ class InvIndex{
 						return;
 					}
 				}
-				obj.push(make_pair(x, 1));
+				obj.push_back(make_pair(x, 1));
 			}
 			else{
 				vector <pair<GraphID, int> > temp;
@@ -94,7 +94,7 @@ class InvIndex{
 		}
 };
 
-KatIndex index[K];
+KatIndex Kindex[K];
 InvIndex inv[K];
 
 
@@ -113,22 +113,20 @@ class Graph{
 				for(int i=0;i<VertexNum;i++){
 					Sequence temp;
 					temp.setRoot(tempLabel[i]);
-					for(int j=0;j<temp[i].size();j++){
-						SequenceElem& Node2 = temp[i][j];
+					for(int j=0;j<List[i].size();j++){
+						SequenceElem& Node2 = List[i][j];
 						VertexLabel vl = tempLabel[Node2.second];
 						EdgeLabel el = ELabel[Node2.first];
 						temp.push_elem(SequenceElem(el, vl));
 					}
 					temp.sort_sequence();
-					int id = index[k].getID(temp);
-					if(id == -1){
-						id = index[k].Push(temp);
-					}
+					int id = Kindex[k].getID(temp);
+					if(id == -1) id = Kindex[k].Push(temp);
 					newLabel[i] = id;
 				}
 			}
 		}
-}
+};
 int main(){
 	Graph dataGraph[GraphMAX];
 	return 0;
