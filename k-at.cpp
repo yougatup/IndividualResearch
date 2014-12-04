@@ -15,6 +15,7 @@ typedef int GraphID;
 typedef int VertexLabel;
 typedef int EdgeLabel;
 typedef pair<EdgeLabel, VertexLabel> SequenceElem;
+typedef pair<EdgeID, VertexID> ListElem;
 class Sequence{
 	public:
 		VertexLabel root;
@@ -26,15 +27,29 @@ class Sequence{
 		void push_elem(const SequenceElem& elem){
 			Seq.push_back(elem);
 		}
+		void sort_sequence(){
+			sort(Seq.begin(), Seq.end());
+		}
 		void setRoot(const VertexLabel s){
 			root = s;
 		}
-		bool operator < (const Sequence& s, const Sequence& t){
-			if(s.root < t.root) return true;
-			else if(s.root > t.root) return false;
-			assert(false);
-		}
+
 };
+bool operator < (const Sequence& s, const Sequence& t){
+	if(s.root < t.root) return true;
+	else if(s.root > t.root) return false;
+	assert(false);
+}
+
+bool operator > (const Sequence& s, const Sequence& t){
+	if(s.root > t.root) return true;
+	else if(s.root < t.root) return false;
+	assert(false);
+}
+
+bool operator == (const Sequence& s, const Sequence& t){
+	return s.root == t.root;
+}
 class KatIndex{
 	public:
 		map <Sequence, GraphID> Index;
@@ -43,9 +58,11 @@ class KatIndex{
 			count = 0;
 			Index.clear();
 		}
-		void Push(const Sequence& s){
-			if(Index.count(s) != 0) return;
-			Index.insert(s);
+		GraphID Push(const Sequence& s){
+			int temp = Index.count(s);
+			if(temp != 0) return temp;
+			Index[s] = ++count;
+			return count;
 		}
 		GraphID getID(const Sequence& s){
 			if(Index.count(s) == 0) return -1;
@@ -60,7 +77,7 @@ class InvIndex{
 		}
 		void Push(const Sequence& s, const GraphID x){
 			if(Inv.count(s) != 0){
-				vector <pair<GraphID, int> > obj& = Inv[s];
+				vector <pair<GraphID, int> > &obj = Inv[s];
 				for(int i=0;i<obj.size();i++){
 					if(obj[i].first == x){
 						obj[i].second++;
@@ -85,24 +102,34 @@ class Graph{
 	public:
 		int VertexNum;
 		int EdgeNum;
-		int Label[VertexMAX];
-		vector <SequenceElem> List[VertexMAX];
+		int VLabel[VertexMAX];
+		int ELabel[EdgeMAX];
+		vector <ListElem> List[VertexMAX];
 		void build_Table(bool flag){
 			int tempLabel[VertexMAX] = {0,};
-			for(int i=0;i<VertexNum;i++) tempLabel[i] = Label[i];
+			int newLabel[VertexMAX] = {0,};
+			for(int i=0;i<VertexNum;i++) tempLabel[i] = VLabel[i];
 			for(int k=0;k<K;k++){
 				for(int i=0;i<VertexNum;i++){
 					Sequence temp;
 					temp.setRoot(tempLabel[i]);
 					for(int j=0;j<temp[i].size();j++){
 						SequenceElem& Node2 = temp[i][j];
-						int label = tempLabel[Node2.second];
+						VertexLabel vl = tempLabel[Node2.second];
+						EdgeLabel el = ELabel[Node2.first];
+						temp.push_elem(SequenceElem(el, vl));
 					}
+					temp.sort_sequence();
+					int id = index[k].getID(temp);
+					if(id == -1){
+						id = index[k].Push(temp);
+					}
+					newLabel[i] = id;
 				}
 			}
 		}
 }
 int main(){
-
+	Graph dataGraph[GraphMAX];
 	return 0;
 }
