@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <ctime>
-#include <cstdlib>
 #include <cassert>
 #include <vector>
 #include <queue>
@@ -8,7 +7,7 @@
 #include <set>
 #include <algorithm>
 using namespace std;
-const int Thres = 2;
+const int Thres = 4;
 const int VertexMAX = 200;
 const int EdgeMAX = 250;
 const int GraphMAX = 10005;
@@ -175,7 +174,7 @@ class Graph{
 		vector <ListElem> List[VertexMAX];
 		vector <int> Partition[Thres+1];
 		Graph() { GraphNo = VertexNum = EdgeNum = maxDegree = 0; }
-		int getELabel(int v1, int v2){
+		int getELabel(int v1, int v2) const{
 			for(int i=0;i<List[v1].size();i++){
 				ListElem Node2 = List[v1][i];
 				if(Node2.second == v2)
@@ -199,6 +198,7 @@ class Graph{
 		void make_partition(){
 			bool Check[VertexMAX] = {0,};
 			queue <int> Queue[Thres+2];
+			assert(VertexNum >= Thres+1);
 			for(int i=0;i<Thres+1;i++){
 				while(1){
 					int x = rand() % VertexNum;
@@ -210,6 +210,7 @@ class Graph{
 					}
 				}
 			}
+			//fprintf(stderr, "hmm..\n");
 			while(1){
 				bool flag2 = false;
 				for(int i=0;i<Thres+1;i++){
@@ -232,10 +233,13 @@ class Graph{
 				}
 				if(!flag2) break;
 			}
+			
+			/*
 			for(int i=0;i<Thres+1;i++){
 				for(int j=0;j<Partition[i].size();j++) fprintf(stderr, "%d ",Partition[i][j]);
 				fprintf(stderr, "\n");
 			}
+			*/
 		}
 		int Input(FILE* fp){
 			/*
@@ -329,6 +333,36 @@ int get_power(int x, int y){
 		else return x * get_power(x, y-1);
 	}
 }
+bool SubgraphIsomorphicRecursion(int cur, const vector <int>& order, int mapping[VertexMAX], int inv[VertexMAX], const Graph& s, const Graph& t){
+	if(cur >= order.size()) return true;
+
+	int Node = order[cur];
+	for(int i=0;i<t.VertexNum;i++){
+		if(inv[i] == -1 && s.VLabel[Node] == t.VLabel[i]){
+			// Node --> i
+			bool flag = true;
+			for(int j=0;j<s.List[Node].size();j++){
+				ListElem Node2 = s.List[Node][j];
+				if(mapping[Node2.second] != -1){
+					if(s.getELabel(Node, Node2.second) != t.getELabel(i, mapping[Node2.second])){
+						flag = false;
+						break;
+					}
+				}
+			}
+			if(flag){
+				mapping[Node] = i;
+				inv[i] = Node;
+				if(SubgraphIsomorphicRecursion(cur+1, order, mapping, inv, s, t) == true)
+					return true;
+				mapping[Node] = -1;
+				inv[i] = -1;
+			}
+		}
+	}
+	return false;
+}
+
 bool SubgraphIsomorphic(const Graph& s, const Graph& t){
 	int mapping[VertexMAX] = {0,}, inv[VertexMAX] = {0,};
 	for(int i=0;i<VertexMAX;i++){
@@ -336,31 +370,10 @@ bool SubgraphIsomorphic(const Graph& s, const Graph& t){
 		inv[i] = -1;
 	}
 	for(int i=0;i<Thres+1;i++){
-		if(SubgraphIsomorphicRecursion(0, s.Partition[i], mapping, s, t))
+		if(SubgraphIsomorphicRecursion(0, s.Partition[i], mapping, inv, s, t))
 			return true;
 	}
 	return false;
-}
-bool SubgraphIsomorphicRecursion(int cur, const vector <int>& order, int mapping[VertexMAX], int inv[VertexMAX], const Graph& s, const Graph& t){
-	int Node = order[cur];
-	for(int i=0;i<t.VertexNum;i++){
-		if(inv[i] == -1 && s.VLabel[Node] == t.VLabel[i]){
-			// Node --> i
-			bool flag = true;
-			for(int j=0;j<s.List[Node].size();j++){
-				int Node2 = s.List[Node][j];
-				if(mapping[Node2] != -1){
-					if(s.getELabel(Node, Node2) != t.getELabel(mapping[Node2], i)){
-						flag = false;
-						break;
-					}
-				}
-			}
-			if(flag){
-
-			}
-		}
-	}
 }
 Graph dataGraph[GraphMAX];
 int main(){
@@ -368,8 +381,8 @@ int main(){
 	int GraphCnt = 0;
 	int QueryCnt = 0;
 	int cnt = 0;
-	FILE *fp = fopen("data.txt","r");
-	FILE *fp1 = fopen("query.txt","r");
+	FILE *fp = fopen("aids_4000.db","r");
+	FILE *fp1 = fopen("aids_100.q","r");
 	//FILE *fp2 = fopen("data.out","w");
 	//FILE *fp3 = fopen("query.out","w");
 
@@ -394,11 +407,10 @@ int main(){
 		if(ter == -1) break;
 		//queryGraph.build_Table(false);
 		for(int i=0;i<GraphCnt;i++){
-			int x = get_common(dataGraph[i].Table[K-1], queryGraph.Table[K-1]);
+			if(SubgraphIsomorphic(dataGraph[i], queryGraph))
+				cnt++;
 			//fprintf(stderr, "** common : %d with graph %d\n",x, i);
 			//fprintf(stderr, "%d %d %d %d %d\n",queryGraph.VertexNum, Thres, get_power(queryGraph.maxDegree - 1, K-1), queryGraph.maxDegree-1, K-1);
-			if(x >= queryGraph.VertexNum - Thres * 2 * get_power(queryGraph.maxDegree - 1, K-1))
-				cnt++;
 		}
 	}
 
