@@ -6,9 +6,9 @@
 #include <algorithm>
 using namespace std;
 const int Thres = 2;
-const int VertexMAX = 100;
-const int EdgeMAX = 100;
-const int GraphMAX = 100;
+const int VertexMAX = 200;
+const int EdgeMAX = 250;
+const int GraphMAX = 10005;
 const int kMAX = 100;
 const int K = 2;
 typedef int EdgeID;
@@ -170,6 +170,7 @@ class Graph{
 		int ELabel[EdgeMAX];
 		map <int, int> Table[K];
 		vector <ListElem> List[VertexMAX];
+		Graph() { GraphNo = VertexNum = EdgeNum = maxDegree = 0; }
 		void build_Table(bool flag){
 			int tempLabel[VertexMAX] = {0,};
 			int newLabel[VertexMAX] = {0,};
@@ -185,16 +186,16 @@ class Graph{
 						temp.push_elem(SequenceElem(el, vl));
 					}
 					temp.sort_sequence();
-					fprintf(stderr, "%d : ",i);
+					//fprintf(stderr, "%d : ",i);
 					int id = Kindex[k].getID(temp);
-					temp.print();
-					fprintf(stderr,"\n");
+					//temp.print();
+					//fprintf(stderr,"\n");
 					if(id == -1){
-						fprintf(stderr, "no!\n");
+						//fprintf(stderr, "no!\n");
 						if(flag) // push only if this graph is data graph
 							id = Kindex[k].Push(temp);
 					}
-					else fprintf(stderr, "found!, id : %d\n", id);
+					//else fprintf(stderr, "found!, id : %d\n", id);
 					if(id != -1) Table[k][id] = Table[k][id] + 1;
 					newLabel[i] = id;
 				}
@@ -254,6 +255,9 @@ class Graph{
 				else if(temp1 == 't') break;
 				else assert(true);
 			}
+			getMaxDegree();
+			assert(VertexNum < VertexMAX);
+			assert(EdgeNum < EdgeMAX);
 			return 0;
 		}
 		void Output(FILE *fp1){
@@ -303,35 +307,39 @@ int get_power(int x, int y){
 		else return x * get_power(x, y-1);
 	}
 }
+Graph dataGraph[GraphMAX];
 int main(){
 	int GraphCnt = 0;
 	int QueryCnt = 0;
 	int cnt = 0;
-	FILE *fp = fopen("data.txt","r");
-	FILE *fp1 = fopen("query.txt","r");
-	FILE *fp2 = fopen("data.out","w");
-	FILE *fp3 = fopen("query.out","w");
-
-	Graph dataGraph[GraphMAX];
-	Graph queryGraph;
+	FILE *fp = fopen("aids_4000.db","r");
+	FILE *fp1 = fopen("aids_100.q","r");
+	//FILE *fp2 = fopen("data.out","w");
+	//FILE *fp3 = fopen("query.out","w");
 
 	char temp;
 	fscanf(fp,"%c",&temp);
 	for(GraphCnt = 0;;GraphCnt++){
+		fprintf(stderr, "processing %d\n",GraphCnt);
 		int ter;
 		ter = dataGraph[GraphCnt].Input(fp);
 		if(ter == -1) break;
 		dataGraph[GraphCnt].build_Table(true);
 	}
 
+	fprintf(stderr, "Database load done\n");
+
 	for(QueryCnt = 0;;QueryCnt++){
+		fprintf(stderr, "Processing %d\n",QueryCnt);
+		Graph queryGraph;
 		int ter;
 		ter = queryGraph.Input(fp1);
 		if(ter == -1) break;
 		queryGraph.build_Table(false);
 		for(int i=0;i<GraphCnt;i++){
 			int x = get_common(dataGraph[i].Table[K-1], queryGraph.Table[K-1]);
-			fprintf(stderr, "** common : %d with graph %d\n",x, i);
+			//fprintf(stderr, "** common : %d with graph %d\n",x, i);
+			//fprintf(stderr, "%d %d %d %d %d\n",queryGraph.VertexNum, Thres, get_power(queryGraph.maxDegree - 1, K-1), queryGraph.maxDegree-1, K-1);
 			if(x >= queryGraph.VertexNum - Thres * 2 * get_power(queryGraph.maxDegree - 1, K-1))
 				cnt++;
 		}
@@ -339,8 +347,8 @@ int main(){
 
 	fclose(fp);
 	fclose(fp1);
-	fclose(fp2);
-	fclose(fp3);
+	//fclose(fp2);
+	//fclose(fp3);
 
 	printf("** result : %d ** \n",cnt);
 
